@@ -1,0 +1,31 @@
+{
+  "bookings": [
+    {
+      "id": "2",
+      "bookingId": "BK-20250717-0212-1829",
+      "type": "On demand",
+      "category": "Car Wash",
+      "service": "Foam wash",
+      "status": "Upcoming",
+      "partner": "Zad",
+      "address": "Bangalore",
+      "date": "2025-07-17",
+      "time": "09:00",
+      "datetime": "2025-07-17T09:00"
+    }
+  ],
+  "partners": [
+    {
+      "id": "1",
+      "name": "Raj"
+    },
+    {
+      "id": "2",
+      "name": "Zad"
+    },
+    {
+      "id": "d824",
+      "name": "Did"
+    }
+  ]
+}
