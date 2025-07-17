@@ -9,6 +9,10 @@ import AssignBookingModal from "./AssignBookingModal";
 
 export default function ScheduleCalendar() {
   const bookings = useBookingStore((state) => state.bookings);
+  const upcomingCount = bookings.filter(b => b.status === "Upcoming").length;
+const pendingCount = bookings.filter(b => b.status === "Pending").length;
+const activeCount = bookings.filter(b => b.status === "Active").length;
+
   const partners = useBookingStore((state) => state.partners);
   const getStatusColor = (status) => {
   switch (status) {
@@ -110,30 +114,34 @@ const handlePartnerAssign = (bookingId, partnerName) => {
 
 
   return (
-    <div className="p-6">
-      <h2 className="text-xl font-semibold mb-2">Schedule Management</h2>
-      <p className="text-sm text-gray-600 mb-4">
-        View and manage booking schedules across all partners
-      </p>
+  <div className="p-6">
+    <h2 className="text-xl font-semibold mb-2">Schedule Management</h2>
+    <p className="text-sm text-gray-600 mb-4">
+      View and manage booking schedules across all partners
+    </p>
 
-      <div className="grid grid-cols-5 gap-4 mb-6">
-        <div className="bg-white p-4 shadow rounded">
-          <p className="text-xl font-bold text-center">28</p>
-          <p className="text-sm text-center">Upcoming bookings</p>
-        </div>
-        <div className="bg-white p-4 shadow rounded">
-          <p className="text-xl font-bold text-center">4</p>
-          <p className="text-sm text-center">Pending bookings</p>
-        </div>
-        <div className="bg-white p-4 shadow rounded">
-          <p className="text-xl font-bold text-center">5</p>
-          <p className="text-sm text-center">Active bookings</p>
-        </div>
-        <div className="bg-white p-4 shadow rounded">
-          <p className="text-xl font-bold text-center">5</p>
-          <p className="text-sm text-center">Total Partners</p>
-        </div>
+    <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="bg-white p-4 shadow rounded">
+        <p className="text-xl font-bold text-center">{upcomingCount}</p>
+        <p className="text-sm text-center">Upcoming bookings</p>
       </div>
+      <div className="bg-white p-4 shadow rounded">
+        <p className="text-xl font-bold text-center">{pendingCount}</p>
+        <p className="text-sm text-center">Pending bookings</p>
+      </div>
+      <div className="bg-white p-4 shadow rounded">
+        <p className="text-xl font-bold text-center">{activeCount}</p>
+        <p className="text-sm text-center">Active bookings</p>
+      </div>
+      <div className="bg-white p-4 shadow rounded">
+        <p className="text-xl font-bold text-center">{partners.length}</p>
+        <p className="text-sm text-center">Total Partners</p>
+      </div>
+    </div>
+    
+    {/* The rest of your return content (calendar etc) continues here... */}
+
+
 
       <div className="bg-white p-4 shadow rounded">
         <div className="flex justify-between mb-4">
