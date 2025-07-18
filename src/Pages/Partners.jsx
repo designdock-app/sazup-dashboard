@@ -1,13 +1,25 @@
 import React, { useState } from "react";
+import { useEffect } from "react";
 import { useBookingStore } from "../store/bookingStore";
 import { toast } from "react-hot-toast";
 import axios from "axios";
+import { supabase } from "../supabaseClient";
+
+
+
 
 export default function Partners() {
   const partners = useBookingStore((state) => state.partners);
   const addPartner = useBookingStore((state) => state.addPartner);
   const deletePartner = useBookingStore((state) => state.deletePartner);
-  const editPartner = useBookingStore((state) => state.editPartner);
+  const fetchPartners = useBookingStore((state) => state.fetchPartners);
+  const updatePartner = useBookingStore((state) => state.updatePartner);
+
+
+useEffect(() => {
+  fetchPartners(); // 🟢 This loads partners from Supabase
+}, []);
+
 
   const [newPartner, setNewPartner] = useState("");
   const [editedPartner, setEditedPartner] = useState(null);
@@ -16,36 +28,33 @@ export default function Partners() {
   if (!newPartner.trim()) return;
 
   try {
-    await addPartner({ name: newPartner.trim() }); // ✅ only this
+    await addPartner({ name: newPartner.trim() }); // ✅ THIS LINE IS CRITICAL
     setNewPartner("");
     toast.success("Partner added");
   } catch (err) {
-    console.error("Failed to save partner:", err);
+    console.error("Failed to add partner:", err);
     toast.error("Failed to add partner");
+  }
+
+
+
+    
+  };
+  const handleSaveEdit = async () => {
+  if (!editedPartner?.name.trim()) {
+    toast.error("Name cannot be empty.");
+    return;
+  }
+
+  const success = await updatePartner(editedPartner.id, editedPartner.name.trim());
+  if (success) {
+    toast.success("Partner name updated");
+    setEditedPartner(null);
+  } else {
+    toast.error("Failed to update partner");
   }
 };
 
-
-  const handleRename = async () => {
-    if (!editedPartner.name.trim()) {
-      toast.error("Name cannot be empty.");
-      return;
-    }
-
-    try {
-      await axios.put(`http://localhost:3001/partners/${editedPartner.id}`, {
-        ...editedPartner,
-        name: editedPartner.name.trim(),
-      });
-
-      editPartner(editedPartner.id, editedPartner.name.trim());
-      toast.success("Partner renamed successfully.");
-      setEditedPartner(null);
-    } catch (err) {
-      console.error("Rename failed:", err);
-      toast.error("Failed to rename partner");
-    }
-  };
 
   return (
     <div className="p-6">
@@ -82,11 +91,12 @@ export default function Partners() {
             className="border border-gray-300 px-4 py-2 rounded w-64"
           />
           <button
-            onClick={handleRename}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Save
-          </button>
+  onClick={handleSaveEdit}
+  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+>
+  Save
+</button>
+
           <button
             onClick={() => setEditedPartner(null)}
             className="text-gray-600 px-3 py-2 rounded hover:text-red-600"
@@ -127,17 +137,24 @@ export default function Partners() {
 
               <button
                 onClick={async () => {
-                  if (confirm(`Delete partner "${partner.name}"?`)) {
-                    try {
-                      await axios.delete(`http://localhost:3001/partners/${partner.id}`);
-                      deletePartner(partner.id);
-                      toast.success("Partner deleted and unassigned from bookings.");
-                    } catch (err) {
-                      console.error("Delete failed:", err);
-                      toast.error("Failed to delete partner");
-                    }
-                  }
-                }}
+  if (confirm(`Delete partner "${partner.name}"?`)) {
+    try {
+      const { error } = await supabase
+        .from("partners")
+        .delete()
+        .eq("id", partner.id);
+
+      if (error) throw error;
+
+      deletePartner(partner.id); // Remove from local store
+      toast.success("Partner deleted");
+    } catch (err) {
+      console.error("❌ Delete failed:", err.message);
+      toast.error("Failed to delete partner");
+    }
+  }
+}}
+
                 className="px-3 py-1 rounded border border-red-400 text-sm hover:bg-red-100"
               >
                 <span className="font-medium text-red-600">Delete</span>

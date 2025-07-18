@@ -1,146 +1,96 @@
-// bookingStore.js
-import { create } from "zustand";
-import axios from "axios";
+// src/store/bookingStore.js
+import { create } from 'zustand';
+import { supabase } from '../supabaseClient';
 
 export const useBookingStore = create((set, get) => ({
   bookings: [],
   partners: [],
 
-  // Load bookings from JSON Server
   fetchBookings: async () => {
-    const response = await axios.get("http://localhost:3001/bookings");
-    set({ bookings: response.data });
+    const { data, error } = await supabase.from('bookings').select('*');
+    if (!error) set({ bookings: data });
+    else console.error("❌ Error fetching bookings:", error);
   },
 
-  // Load partners from JSON Server
   fetchPartners: async () => {
-    const response = await axios.get("http://localhost:3001/partners");
-    set({ partners: response.data });
+    const { data, error } = await supabase.from('partners').select('*');
+    if (!error) set({ partners: data });
+    else console.error("❌ Error fetching partners:", error);
   },
 
-  // Add a booking and persist it
-  addBooking: async (newBooking) => {
-  const generateBookingId = () => {
-    const now = new Date();
-    const datePart = now.toISOString().split("T")[0].replace(/-/g, "");
-    const timePart = now.getHours().toString().padStart(2, "0") + now.getMinutes().toString().padStart(2, "0");
-    const rand = Math.floor(1000 + Math.random() * 9000);
-    return `BK-${datePart}-${timePart}-${rand}`;
-  };
-
-  const bookingWithId = {
-    ...newBooking,
-    bookingId: generateBookingId(),
-  };
-
-  const response = await axios.post("http://localhost:3001/bookings", bookingWithId);
-
-  // ✅ Check if booking already exists before adding
-  set((state) => {
-    const exists = state.bookings.some(
-      (b) => b.bookingId === response.data.bookingId
-    );
-    if (exists) return {}; // Don't add duplicate
-    return {
-      bookings: [...state.bookings, response.data],
-    };
-  });
-},
-
-
-  // Assign partner to booking and persist
-  assignPartner: async (bookingId, partnerName) => {
-    const bookingToUpdate = get().bookings.find((b) => b.id === bookingId);
-    if (!bookingToUpdate) return;
-
-    const updatedBooking = { ...bookingToUpdate, partner: partnerName };
-    await axios.put(`http://localhost:3001/bookings/${bookingId}`, updatedBooking);
-
-    set((state) => ({
-      bookings: state.bookings.map((b) =>
-        b.id === bookingId ? updatedBooking : b
-      ),
-    }));
+  addPartner: async (partner) => {
+    const { data, error } = await supabase
+      .from("partners")
+      .insert([{ name: partner.name }])
+      .select();
+    if (error) throw error;
+    set((state) => ({ partners: [...state.partners, ...data] }));
   },
 
-  // Add partner and persist
-  addPartner: async (newPartner) => {
-    const response = await axios.post("/partners", newPartner); // ✅ no localhost hardcoding
-    set((state) => ({
-      partners: [...state.partners, response.data],
-    }));
+  addBooking: async (booking) => {
+    const { data, error } = await supabase.from('bookings').insert([booking]).select();
+    if (error) return false;
+    set((state) => ({ bookings: [...state.bookings, data[0]] }));
+    return true;
   },
 
-  // Edit partner and update associated bookings
-  editPartner: async (partnerId, newName) => {
-    const currentPartner = get().partners.find((p) => p.id === partnerId);
-    if (!currentPartner) return;
+   assignPartner: async (bookingId, partnerName) => {
+    const state = get();
+    const partner = state.partners.find((p) => p.name === partnerName);
+    if (!partner) {
+      console.error("❌ Partner not found:", partnerName);
+      return;
+    }
 
-    const updatedPartner = { ...currentPartner, name: newName };
-    await axios.put(`http://localhost:3001/partners/${partnerId}`, updatedPartner);
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ partner_id: partner.id })
+      .eq("id", bookingId)
+      .select();
 
-    const updatedBookings = get().bookings.map((b) =>
-      b.partner === currentPartner.name ? { ...b, partner: newName } : b
-    );
-    await Promise.all(
-      updatedBookings.map((b) =>
-        axios.put(`http://localhost:3001/bookings/${b.id}`, b)
-      )
-    );
+    if (error) {
+      console.error("❌ Failed to assign partner:", error.message);
+    } else {
+      console.log("✅ Partner assigned in Supabase:", data);
+
+      set((state) => ({
+        bookings: state.bookings.map((b) =>
+          b.id === bookingId ? { ...b, partner_id: partner.id } : b
+        ),
+      }));
+    }
+  },
+
+  deleteBooking: async (id) => {
+    const { error } = await supabase.from('bookings').delete().eq('id', id);
+    if (error) {
+      console.error('❌ Error deleting booking:', error);
+      return false;
+    } else {
+      set((state) => ({
+        bookings: state.bookings.filter((b) => b.id !== id),
+      }));
+      return true;
+    }
+  },
+  updatePartner: async (id, newName) => {
+    const { error } = await supabase
+      .from("partners")
+      .update({ name: newName })
+      .eq("id", id);
+
+    if (error) {
+      console.error("❌ Error updating partner:", error);
+      return false;
+    }
 
     set((state) => ({
       partners: state.partners.map((p) =>
-        p.id === partnerId ? updatedPartner : p
-      ),
-      bookings: updatedBookings,
-    }));
-  },
-
-  // Delete partner and unassign from bookings
-  deletePartner: async (partnerId) => {
-    const removedPartner = get().partners.find((p) => p.id === partnerId);
-    if (!removedPartner) return;
-
-    await axios.delete(`http://localhost:3001/partners/${partnerId}`);
-
-    const updatedBookings = get().bookings.map((b) =>
-      b.partner === removedPartner.name ? { ...b, partner: "" } : b
-    );
-    await Promise.all(
-      updatedBookings.map((b) =>
-        axios.put(`http://localhost:3001/bookings/${b.id}`, b)
-      )
-    );
-
-    set((state) => ({
-      partners: state.partners.filter((p) => p.id !== partnerId),
-      bookings: updatedBookings,
-    }));
-  },
-  // ✅ UPDATE BOOKING AND UPDATE LOCAL STATE
-updateBooking: async (bookingId, updatedBooking) => {
-  try {
-    await axios.put(`http://localhost:3001/bookings/${bookingId}`, updatedBooking);
-    set((state) => ({
-      bookings: state.bookings.map((b) =>
-        b.id === bookingId ? updatedBooking : b
+        p.id === id ? { ...p, name: newName } : p
       ),
     }));
-  } catch (err) {
-    console.error("Failed to update booking:", err);
-  }
-},
-
-
-  // ✅ DELETE BOOKING AND UPDATE LOCAL STATE
-  deleteBooking: async (bookingId) => {
-    try {
-      await axios.delete(`http://localhost:3001/bookings/${bookingId}`);
-      set((state) => ({
-        bookings: state.bookings.filter((b) => b.id !== bookingId),
-      }));
-    } catch (error) {
-      console.error("Failed to delete booking:", error);
-    }
+    return true;
   },
+
 }));
+

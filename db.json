@@ -12,6 +12,19 @@
       "date": "2025-07-17",
       "time": "09:00",
       "datetime": "2025-07-17T09:00"
+    },
+    {
+      "id": "BK-20250718-1525-8165",
+      "type": "On demand",
+      "category": "Car detailing",
+      "service": "Tire repair",
+      "address": "Bangalore",
+      "date": "2025-07-18",
+      "time": "15:25",
+      "datetime": "2025-07-18T15:25",
+      "partner": "Zad",
+      "status": "Pending",
+      "bookingId": "BK-20250717-1525-7723"
     }
   ],
   "partners": [

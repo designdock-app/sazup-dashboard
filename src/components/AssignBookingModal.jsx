@@ -1,186 +1,144 @@
-import React, { useState } from "react";
+// src/components/AssignBookingModal.jsx
+import React, { useEffect, useState } from "react";
 import { useBookingStore } from "../store/bookingStore";
-import toast from "react-hot-toast";
+import { toast } from "react-hot-toast";
+import { supabase } from "../supabaseClient";
 
-
-export default function AssignBookingModal({
-  booking = {},
-  onCreate,
-  onClose,
-  type: parentType,
-  category: parentCategory,
-  service: parentService,
-  address: parentAddress,
-  datetime: parentDatetime,
-  setType: setParentType,
-  setCategory: setParentCategory,
-  setService: setParentService,
-  setAddress: setParentAddress,
-  setDatetime: setParentDatetime,
-}) {
+export default function AssignBookingModal({ onClose, booking = null }) {
+  const addBooking = useBookingStore((state) => state.addBooking);
+  const fetchBookings = useBookingStore((state) => state.fetchBookings);
   const partners = useBookingStore((state) => state.partners);
 
+  const [address, setAddress] = useState(booking?.address || "");
+  const [type, setType] = useState(booking?.type || "");
+  const [category, setCategory] = useState(booking?.category || "");
+  const [service, setService] = useState(booking?.service || "");
+  const [datetime, setDatetime] = useState(booking?.datetime?.slice(0, 16) || "");
+  const [status, setStatus] = useState(booking?.status || "Pending");
+  const [partnerId, setPartnerId] = useState(booking?.partner_id || "");
 
-  function generateBookingId(datetime) {
-    const datePart = datetime.split("T")[0].replace(/-/g, "");
-    const timePart = datetime.split("T")[1].slice(0, 5).replace(":", "");
-    const random = Math.floor(1000 + Math.random() * 9000);
-    return `BK-${datePart}-${timePart}-${random}`;
-  }
+  const handleSave = async () => {
+    if (!type || !category || !service || !datetime) {
+      toast.error("Please fill all required fields");
+      return;
+    }
 
-  const [type, setType] = useState(booking?.type || parentType || "");
-const [category, setCategory] = useState(booking?.category || parentCategory || "");
-const [service, setService] = useState(booking?.service || parentService || "");
-const [address, setAddress] = useState(booking?.address || parentAddress || "");
-const [datetime, setDatetime] = useState(
-  booking?.datetime || parentDatetime || ""
-);
+    const bookingData = {
+      address,
+      type,
+      category,
+      service,
+      datetime,
+      status,
+      partner_id: partnerId ? Number(partnerId) : null,
+    };
 
+    if (booking) {
+      // Update existing booking
+      const { error } = await supabase
+        .from("bookings")
+        .update(bookingData)
+        .eq("id", booking.id);
 
-  const [status, setStatus] = useState(booking?.status || "Upcoming");
-  const [selectedPartner, setSelectedPartner] = useState(booking?.partner || "");
-
-
-const handleSubmit = () => {
-  if (!datetime || !datetime.includes("T")) {
-    toast.error("Please enter a valid date and time.");
-    return;
-  }
-
-  const updatedBooking = {
-    ...booking, // include all existing fields
-    id: booking.id || generateBookingId(datetime),
-    type,
-    category,
-    service,
-    address,
-    date: new Date(datetime).toISOString().split("T")[0],
-    time: datetime.split("T")[1],
-    datetime,
-    partner: selectedPartner || booking.partner || "",
-    status: status || booking.status || "Pending",
+      if (error) {
+        toast.error("❌ Failed to assign");
+        console.error(error);
+      } else {
+        toast.success("✅ Assigned!");
+        fetchBookings(); // refresh UI state
+        onClose();
+      }
+    } else {
+      // Create new booking
+      const success = await addBooking(bookingData);
+      if (success) {
+        toast.success("✅ Booking created");
+        onClose();
+      } else {
+        toast.error("❌ Failed to create booking");
+      }
+    }
   };
 
-  console.log("✅ handleSubmit fired, booking is:", updatedBooking);
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-[400px]">
+        <h2 className="text-xl font-bold mb-4">
+          {booking ? "Assign Booking" : "New Booking"}
+        </h2>
 
-  // Clear parent form state if creating
-  if (setParentType) setParentType("");
-  if (setParentCategory) setParentCategory("");
-  if (setParentService) setParentService("");
-  if (setParentAddress) setParentAddress("");
-  if (setParentDatetime) setParentDatetime("");
+        <input
+          type="text"
+          placeholder="Address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        />
 
-  onCreate?.(updatedBooking);
-  onClose?.();
-};
+        <input
+          type="text"
+          placeholder="Type"
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        />
 
+        <input
+          type="text"
+          placeholder="Category"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        />
 
+        <input
+          type="text"
+          placeholder="Service"
+          value={service}
+          onChange={(e) => setService(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        />
 
-
- return (
-    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded shadow-md w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4">
-  {booking?.id ? "Edit Booking" : "Create New Booking"}
-</h2>
-
-
-        <div className="space-y-3 mb-4">
-          <input
-  type="datetime-local"
-  value={datetime}
-  onChange={(e) => {
-    setDatetime(e.target.value);
-    if (setParentDatetime) setParentDatetime(e.target.value);
-  }}
-  className="w-full border rounded p-2"
-/>
-
-<input
-  type="text"
-  value={type}
-  onChange={(e) => {
-    setType(e.target.value);
-    if (setParentType) setParentType(e.target.value);
-  }}
-  placeholder="Type of Service"
-  className="w-full border rounded p-2"
-/>
-
-<input
-  type="text"
-  value={category}
-  onChange={(e) => {
-    setCategory(e.target.value);
-    if (setParentCategory) setParentCategory(e.target.value);
-  }}
-  placeholder="Category"
-  className="w-full border rounded p-2"
-/>
-
-<input
-  type="text"
-  value={service}
-  onChange={(e) => {
-    setService(e.target.value);
-    if (setParentService) setParentService(e.target.value);
-  }}
-  placeholder="Service"
-  className="w-full border rounded p-2"
-/>
-
-<input
-  type="text"
-  value={address}
-  onChange={(e) => {
-    setAddress(e.target.value);
-    if (setParentAddress) setParentAddress(e.target.value);
-  }}
-  placeholder="Address"
-  className="w-full border rounded p-2"
-/>
-
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full border rounded p-2"
-            >
-              <option value="Upcoming">Upcoming</option>
-              <option value="Pending">Pending</option>
-              <option value="Active">Active</option>
-            </select>
-          </div>
-        </div>
+        <input
+          type="datetime-local"
+          value={datetime}
+          onChange={(e) => setDatetime(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        />
 
         <select
-  className="w-full p-2 border rounded mb-4"
-  value={selectedPartner}
-  onChange={(e) => setSelectedPartner(e.target.value)}
->
-  <option value="">Select Partner</option>
-  {partners.map((partner) => (
-    <option key={partner.id} value={partner.name}>
-      {partner.name}
-    </option>
-  ))}
-</select>
+          value={partnerId}
+          onChange={(e) => setPartnerId(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        >
+          <option value="">-- Select Partner --</option>
+          {partners.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
 
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        >
+          <option value="Pending">Pending</option>
+          <option value="Upcoming">Upcoming</option>
+          <option value="Active">Active</option>
+        </select>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex justify-end space-x-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+            className="px-4 py-2 bg-gray-200 text-black rounded"
           >
             Cancel
           </button>
           <button
-            onClick={handleSubmit}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+            onClick={handleSave}
+            className="px-4 py-2 bg-green-600 text-white rounded"
           >
             Save
           </button>
