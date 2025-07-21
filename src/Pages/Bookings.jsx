@@ -17,6 +17,20 @@ export default function Bookings() {
   const [editMode, setEditMode] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+const bookingsPerPage = 30;
+
+
+
+const indexOfLastBooking = currentPage * bookingsPerPage;
+const indexOfFirstBooking = indexOfLastBooking - bookingsPerPage;
+const currentBookings = bookings.slice(indexOfFirstBooking, indexOfLastBooking);
+
+const totalPages = Math.ceil(bookings.length / bookingsPerPage);
+console.log("Total bookings:", bookings.length);
+console.log("Total pages:", totalPages);
+
+
   
   
 
@@ -27,9 +41,11 @@ export default function Bookings() {
   const handleCreate = async (newBooking) => {
     const success = await addBooking(newBooking);
     if (success) {
-      toast.success("Booking added");
-      setShowModal(false);
-    } else {
+  toast.success("Booking added");
+  setShowModal(false);
+  setCurrentPage(1); // 👈 Reset to first page
+}
+else {
       toast.error("Error adding booking");
     }
   };
@@ -53,10 +69,11 @@ export default function Bookings() {
 
   const success = await deleteBooking(id);
   if (success) {
-    toast.success("Booking deleted successfully");
-  } else {
-    toast.error("Failed to delete booking");
-  }
+  toast.success("Booking deleted successfully");
+  setCurrentPage(1); // 👈 Reset to first page
+} else {
+  toast.error("Failed to delete booking");
+}
 };
 
 
@@ -98,7 +115,8 @@ export default function Bookings() {
   </thead>
 
   <tbody className="divide-y divide-gray-100 text-gray-800">
-    {bookings.map((b) => (
+    {currentBookings.map((b) => (
+
       <tr
         key={b.id}
         className="hover:bg-gray-50 transition duration-100"
@@ -164,7 +182,55 @@ export default function Bookings() {
     ))}
   </tbody>
 </table>
+
+
+
       </div>
+      {totalPages > 1 && (
+  <div className="flex justify-center mt-6 gap-2 items-center">
+    {/* Previous Arrow */}
+    <button
+      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+      disabled={currentPage === 1}
+      className={`px-3 py-1 min-w-[32px] text-center rounded-full border text-sm shadow-sm transition-colors ${
+
+        currentPage === 1
+          ? "opacity-50 cursor-not-allowed"
+          : "hover:bg-gray-100"
+      }`}
+    >
+      ←
+    </button>
+
+    {/* Page Numbers */}
+    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+      <button
+        key={page}
+        onClick={() => setCurrentPage(page)}
+        className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+          page === currentPage
+            ? "bg-green-600 text-white font-medium shadow"
+            : "bg-white hover:bg-gray-100"
+        }`}
+      >
+        {page}
+      </button>
+    ))}
+
+    {/* Next Arrow */}
+    <button
+      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+      disabled={currentPage === totalPages}
+      className={`px-3 py-1 rounded-full border text-sm transition-colors ${
+        currentPage === totalPages
+          ? "opacity-50 cursor-not-allowed"
+          : "hover:bg-gray-100"
+      }`}
+    >
+      →
+    </button>
+  </div>
+)}
 
       {/* Modal */}
       {showModal && (
