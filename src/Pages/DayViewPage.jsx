@@ -1,7 +1,9 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useBookingStore } from "../store/bookingStore";
 import { format } from "date-fns";
+import AssignBookingModal from "../components/AssignBookingModal";
+
 
 export default function DayViewPage() {
   const { date } = useParams();
@@ -11,6 +13,9 @@ export default function DayViewPage() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const viewMode = searchParams.get("view") || "list";
+  const [modalOpen, setModalOpen] = useState(false);
+const [selectedBooking, setSelectedBooking] = useState(null);
+
 
 
   const day = useMemo(() => new Date(date), [date]);
@@ -50,6 +55,7 @@ export default function DayViewPage() {
     });
     return groups;
   }, [filteredBookings, partners]);
+  
 
   return (
     <div className="p-6">
@@ -123,7 +129,11 @@ export default function DayViewPage() {
                     {!booking.partner_id && (
                       <button
                         className="text-sm text-white bg-green-600 px-3 py-1 rounded hover:bg-green-700"
-                        onClick={() => navigate(`/schedule/day/${date}?view=list&edit=${booking.id}`)}
+                        onClick={() => {
+  setSelectedBooking(booking);
+  setModalOpen(true);
+}}
+
                       >
                         Assign
                       </button>
@@ -173,6 +183,16 @@ export default function DayViewPage() {
           </table>
         </div>
       )}
+      {modalOpen && selectedBooking && (
+  <AssignBookingModal
+    booking={selectedBooking}
+    onClose={() => {
+      setModalOpen(false);
+      setSelectedBooking(null);
+    }}
+  />
+)}
+
     </div>
   );
 }
