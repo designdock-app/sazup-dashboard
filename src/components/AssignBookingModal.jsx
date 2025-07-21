@@ -17,48 +17,62 @@ export default function AssignBookingModal({ onClose, booking = null }) {
   const [status, setStatus] = useState(booking?.status || "Pending");
   const [partnerId, setPartnerId] = useState(booking?.partner_id || "");
 
-  const handleSave = async () => {
-    if (!type || !category || !service || !datetime) {
-      toast.error("Please fill all required fields");
+const handleSave = async () => {
+  if (!type || !category || !service || !datetime) {
+    toast.error("Please fill all required fields");
+    return;
+  }
+
+  const bookingData = {
+    address,
+    type,
+    category,
+    service,
+    datetime,
+    status,
+    partner_id: partnerId ? Number(partnerId) : null,
+  };
+
+  try {
+  if (booking) {
+    const { error } = await supabase
+      .from("bookings")
+      .update(bookingData)
+      .eq("id", booking.id);
+
+    if (error) {
+      toast.error("❌ Failed to update booking");
+      console.error(error);
       return;
     }
 
-    const bookingData = {
-      address,
-      type,
-      category,
-      service,
-      datetime,
-      status,
-      partner_id: partnerId ? Number(partnerId) : null,
-    };
+    toast.success("✅ Booking updated", { duration: 2000 });
+  } else {
+    const { error } = await supabase
+      .from("bookings")
+      .insert([bookingData]);
 
-    if (booking) {
-      // Update existing booking
-      const { error } = await supabase
-        .from("bookings")
-        .update(bookingData)
-        .eq("id", booking.id);
-
-      if (error) {
-        toast.error("❌ Failed to assign");
-        console.error(error);
-      } else {
-        toast.success("✅ Assigned!");
-        fetchBookings(); // refresh UI state
-        onClose();
-      }
-    } else {
-      // Create new booking
-      const success = await addBooking(bookingData);
-      if (success) {
-        toast.success("✅ Booking created");
-        onClose();
-      } else {
-        toast.error("❌ Failed to create booking");
-      }
+    if (error) {
+      toast.error("❌ Failed to create booking");
+      console.error(error);
+      return;
     }
-  };
+
+    toast.success("✅ Booking created", { duration: 2000 });
+  }
+
+  await fetchBookings();
+
+  // 🟢 Wait slightly before closing to allow toast to appear
+  setTimeout(() => {
+    onClose();
+  }, 500);
+} catch (err) {
+  console.error("❌ Error:", err);
+  toast.error("Something went wrong");
+}
+};
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
@@ -147,3 +161,4 @@ export default function AssignBookingModal({ onClose, booking = null }) {
     </div>
   );
 }
+

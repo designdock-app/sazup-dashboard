@@ -1,3 +1,51 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  .status-pill {
+    @apply px-3 py-1 rounded-full text-sm font-medium inline-block;
+  }
+
+  .status-upcoming {
+    background-color: #FFF4EC;
+    color: #FF6B00;
+  }
+
+  .status-pending {
+    background-color: #E8F4FF;
+    color: #2A94F4;
+  }
+
+  .status-active {
+    background-color: #E6F6EC;
+    color: #28A745;
+  }
+
+  /* calendar-only styles (already correct) */
+  .status-upcoming-text {
+    color: #FF6B00;
+  }
+
+  .status-upcoming-faint {
+    color: #FFD3B0;
+  }
+
+  .status-pending-text {
+    color: #2A94F4;
+  }
+
+  .status-pending-faint {
+    color: #B8DCFF;
+  }
+
+  .status-active-text {
+    color: #28A745;
+  }
+
+  .status-active-faint {
+    color: #B2E3C1;
+  }
+}
+
+

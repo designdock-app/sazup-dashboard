@@ -108,10 +108,21 @@ export default function Bookings() {
         <td className="p-3">{b.category}</td>
         <td className="p-3">{b.service}</td>
         <td className="p-3">
-          <span className="bg-blue-100 text-blue-800 px-2 py-1 text-xs rounded-full">
-            {b.status}
-          </span>
-        </td>
+  <span
+    className={`status-pill ${
+      b.status === "Upcoming"
+        ? "status-upcoming"
+        : b.status === "Pending"
+        ? "status-pending"
+        : b.status === "Active"
+        ? "status-active"
+        : ""
+    }`}
+  >
+    {b.status}
+  </span>
+</td>
+
 
         <td className="p-3 relative">
           <button

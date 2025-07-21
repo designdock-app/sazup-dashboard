@@ -36,10 +36,11 @@ export default function ScheduleCalendar() {
   }
 
   const handleDateClick = (date) => {
-    if (!date) return;
-    const formatted = format(date, "yyyy-MM-dd");
-    navigate(`/schedule/day/${formatted}`);
-  };
+  if (!date) return;
+  const formatted = format(date, "yyyy-MM-dd");
+  navigate(`/schedule/day/${formatted}?view=timeline`);
+};
+
 
   const getCounts = (date) => {
     const dStr = format(date, "yyyy-MM-dd");
@@ -119,15 +120,15 @@ export default function ScheduleCalendar() {
                           const { upcoming, pending, active } = getCounts(date);
                           return (
                            <div className="mt-1 text-xs space-y-1">
-  <div className={upcoming === 0 ? "text-green-300" : "text-green-600"}>
-    • {upcoming} Upcoming
-  </div>
-  <div className={pending === 0 ? "text-blue-300" : "text-blue-600"}>
-    • {pending} Pending
-  </div>
-  <div className={active === 0 ? "text-purple-300" : "text-purple-600"}>
-    • {active} Active
-  </div>
+  <div className={upcoming > 0 ? "status-upcoming-text" : "status-upcoming-faint"}>
+  • {upcoming} Upcoming
+</div>
+<div className={pending > 0 ? "status-pending-text" : "status-pending-faint"}>
+  • {pending} Pending
+</div>
+<div className={active > 0 ? "status-active-text" : "status-active-faint"}>
+  • {active} Active
+</div>
 </div>
 
                           );

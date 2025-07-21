@@ -12,6 +12,7 @@ export default function DayViewPage() {
   const searchParams = new URLSearchParams(location.search);
   const viewMode = searchParams.get("view") || "list";
 
+
   const day = useMemo(() => new Date(date), [date]);
 
   const timeslots = Array.from({ length: 17 }, (_, i) => {
@@ -53,47 +54,52 @@ export default function DayViewPage() {
   return (
     <div className="p-6">
       {/* Header row with back and tabs */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate("/schedule")}
-            className="text-xl hover:text-green-600"
-          >
-            ←
-          </button>
-          <h2 className="text-xl font-semibold">
-            {format(day, "dd MMMM yyyy")}
-          </h2>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => navigate(`/schedule/day/${date}?view=list`)}
-            className={`border px-3 py-1 rounded ${
-              viewMode === "list" ? "bg-green-600 text-white" : "bg-white"
-            }`}
-          >
-            🗒️ List View
-          </button>
-          <button
-            onClick={() => navigate(`/schedule/day/${date}?view=timeline`)}
-            className={`border px-3 py-1 rounded ${
-              viewMode === "timeline" ? "bg-green-600 text-white" : "bg-white"
-            }`}
-          >
-            📅 Timeline View
-          </button>
-        </div>
-      </div>
+      {/* Top bar with back button and date */}
+<div className="flex items-center gap-2 mb-2">
+  <button
+    onClick={() => navigate("/schedule")}
+    className="text-xl hover:text-green-600"
+  >
+    ←
+  </button>
+  <h2 className="text-xl font-semibold">
+    {format(day, "dd MMMM yyyy")}
+  </h2>
+</div>
 
-      {/* Count summary */}
-      <p className="text-sm mb-4">
-        {filteredBookings.length} bookings •{" "}
-        {filteredBookings.filter((b) => b.partner_id).length} assigned •{" "}
-        {filteredBookings.filter((b) => !b.partner_id).length} unassigned
-      </p>
+{/* Count summary */}
+<p className="text-sm text-gray-500 mb-4">
+  {filteredBookings.length} bookings •{" "}
+  {filteredBookings.filter((b) => b.partner_id).length} assigned •{" "}
+  {filteredBookings.filter((b) => !b.partner_id).length} unassigned
+</p>
+
+{/* View toggle buttons (moved below date) */}
+<div className="flex gap-2">
+  <button
+    onClick={() => navigate(`/schedule/day/${date}?view=timeline`)}
+    className={`border px-3 py-1 rounded ${
+      viewMode === "timeline" ? "bg-green-600 text-white" : "bg-white"
+    }`}
+  >
+    📅 Timeline View
+  </button>
+  <button
+    onClick={() => navigate(`/schedule/day/${date}?view=list`)}
+    className={`border px-3 py-1 rounded ${
+      viewMode === "list" ? "bg-green-600 text-white" : "bg-white"
+    }`}
+  >
+    🗒️ List View
+  </button>
+</div>
+
+
+
+
 
       {viewMode === "list" ? (
-        <div className="space-y-6">
+  <div className="space-y-6 mt-4">
           {Object.entries(groupedBookings).map(([partner, bookings]) => (
             <div
               key={partner}
@@ -129,7 +135,7 @@ export default function DayViewPage() {
           ))}
         </div>
       ) : (
-        <div className="overflow-auto border rounded">
+        <div className="overflow-auto border rounded mt-4">
           <table className="min-w-full border text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
