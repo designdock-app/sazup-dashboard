@@ -11,10 +11,10 @@ export default function ScheduleCalendar() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
 
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
   const firstDay = new Date(year, month, 1);
   const startDay = firstDay.getDay();
@@ -36,11 +36,10 @@ export default function ScheduleCalendar() {
   }
 
   const handleDateClick = (date) => {
-  if (!date) return;
-  const formatted = format(date, "yyyy-MM-dd");
-  navigate(`/schedule/day/${formatted}?view=timeline`);
-};
-
+    if (!date) return;
+    const formatted = format(date, "yyyy-MM-dd");
+    navigate(`/schedule/day/${formatted}?view=timeline`);
+  };
 
   const getCounts = (date) => {
     const dStr = format(date, "yyyy-MM-dd");
@@ -62,6 +61,19 @@ export default function ScheduleCalendar() {
   const upcomingCount = bookings.filter(b => b.status === "Upcoming").length;
   const pendingCount = bookings.filter(b => b.status === "Pending").length;
   const activeCount = bookings.filter(b => b.status === "Active").length;
+
+  const monthOptions = Array.from({ length: 12 }, (_, i) => {
+    const date = new Date(2025, 6 + i); // Start from July 2025
+    return {
+      label: format(date, "MMMM yyyy"),
+      value: date.toISOString()
+    };
+  });
+
+  const handleMonthChange = (e) => {
+    const selected = new Date(e.target.value);
+    setCurrentDate(selected);
+  };
 
   return (
     <div className="p-6">
@@ -88,8 +100,19 @@ export default function ScheduleCalendar() {
       </div>
 
       <div className="bg-white p-4 shadow rounded">
-        <div className="flex justify-between mb-4">
-          <h3 className="text-md font-semibold">July {year}</h3>
+        <div className="flex justify-between mb-4 items-center">
+          <select
+  value={currentDate.toISOString()}
+  onChange={handleMonthChange}
+  className="border border-gray-300 rounded-md py-2 px-3 text-sm text-gray-800 focus:ring-2 focus:ring-[#05A54B] focus:outline-none"
+>
+
+
+            {monthOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+
           <div className="flex gap-2">
             <button className="bg-green-500 text-white px-3 py-1 rounded">Download</button>
             <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">+ Assign Booking</button>
@@ -99,7 +122,7 @@ export default function ScheduleCalendar() {
         <table className="w-full table-fixed border border-gray-200 text-sm">
           <thead>
             <tr className="bg-gray-100">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+              {"Sun Mon Tue Wed Thu Fri Sat".split(" ").map((d) => (
                 <th key={d} className="p-2 border text-center">{d}</th>
               ))}
             </tr>
@@ -109,33 +132,27 @@ export default function ScheduleCalendar() {
               <tr key={i}>
                 {week.map((date, j) => (
                   <td
-                    key={j}
-                    className={`p-2 border text-left align-top min-h-[80px] hover:bg-gray-100 cursor-pointer`}
-                    onClick={() => handleDateClick(date)}
-                  >
-                    {date && (
-                      <>
-                        <div className="font-medium text-sm">{date.getDate()}</div>
-                        {(() => {
-                          const { upcoming, pending, active } = getCounts(date);
-                          return (
-                           <div className="mt-1 text-xs space-y-1">
-  <div className={upcoming > 0 ? "status-upcoming-text" : "status-upcoming-faint"}>
-  • {upcoming} Upcoming
-</div>
-<div className={pending > 0 ? "status-pending-text" : "status-pending-faint"}>
-  • {pending} Pending
-</div>
-<div className={active > 0 ? "status-active-text" : "status-active-faint"}>
-  • {active} Active
-</div>
-</div>
+  key={j}
+  className="p-2 border text-left align-top hover:bg-gray-100 cursor-pointer"
+  onClick={() => handleDateClick(date)}
+>
+  {date && (
+    <div className="min-h-[80px]">
+      <div className="font-medium text-sm">{date.getDate()}</div>
+      {(() => {
+        const { upcoming, pending, active } = getCounts(date);
+        return (
+          <div className="mt-1 text-xs space-y-1">
+            <div className={upcoming > 0 ? "status-upcoming-text" : "status-upcoming-faint"}>• {upcoming} Upcoming</div>
+            <div className={pending > 0 ? "status-pending-text" : "status-pending-faint"}>• {pending} Pending</div>
+            <div className={active > 0 ? "status-active-text" : "status-active-faint"}>• {active} Active</div>
+          </div>
+        );
+      })()}
+    </div>
+  )}
+</td>
 
-                          );
-                        })()}
-                      </>
-                    )}
-                  </td>
                 ))}
               </tr>
             ))}
