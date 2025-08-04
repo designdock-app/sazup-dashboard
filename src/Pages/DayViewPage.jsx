@@ -13,6 +13,7 @@ export default function DayViewPage() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const viewMode = searchParams.get("view") || "list";
+  const monthParam = searchParams.get("month") || format(new Date(), "yyyy-MM");
   const [modalOpen, setModalOpen] = useState(false);
 const [selectedBooking, setSelectedBooking] = useState(null);
 
@@ -62,12 +63,13 @@ const [selectedBooking, setSelectedBooking] = useState(null);
       {/* Header row with back and tabs */}
       {/* Top bar with back button and date */}
 <div className="flex items-center gap-2 mb-2">
-  <button
-    onClick={() => navigate("/schedule")}
+ <button
+    onClick={() => navigate(`/schedule?month=${monthParam}`)}
     className="text-xl hover:text-green-600"
   >
     ←
   </button>
+
   <h2 className="text-xl font-semibold">
     {format(day, "dd MMMM yyyy")}
   </h2>
